@@ -9,8 +9,9 @@ thiserror = "2.0.16"
 futures = "0.3"
 chrono = { version = "0.4.41", features = ["clock"] }
 base64 = "0.22"
-tiberius = { version = "0.12.3", features = ["tls-native", "tds73", "chrono", "rust_decimal"] }
-tokio-util = "0.7"
+tiberius = { version = "0.12.3", features = ["native-tls", "tds73", "chrono", "rust_decimal"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time"] }
+async-trait = "0.1"
 
 [dev-dependencies]
-tokio = { version = "1.47.1", features = ["full"] }
