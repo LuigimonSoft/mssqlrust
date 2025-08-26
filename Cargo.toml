@@ -1,0 +1,16 @@
+[package]
+name = "mssqlrust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+thiserror = "2.0.16"
+futures = "0.3"
+chrono = { version = "0.4.41", features = ["clock"] }
+base64 = "0.22"
+tiberius = { version = "0.12.3", features = ["tls-native", "tds73", "chrono", "rust_decimal"] }
+tokio-util = "0.7"
+
+[dev-dependencies]
+tokio = { version = "1.47.1", features = ["full"] }
