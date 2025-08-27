@@ -2,6 +2,21 @@ use mssqlrust::dataset::DataValue;
 use mssqlrust::infrastructure::mssql::MssqlConfig;
 use mssqlrust::{execute, Command, Parameter};
 
+use futures::StreamExt;
+use tiberius::Client;
+use tokio::net::TcpStream;
+use tokio_util::compat::TokioAsyncWriteCompatExt;
+
+async fn run_ddl(config: &MssqlConfig, sql: &str) {
+    let cfg = config.to_config();
+    let addr = cfg.get_addr();
+    let tcp = TcpStream::connect(addr).await.unwrap();
+    tcp.set_nodelay(true).unwrap();
+    let mut client = Client::connect(cfg, tcp.compat_write()).await.unwrap();
+    let mut stream = client.simple_query(sql).await.unwrap();
+    while stream.next().await.is_some() {}
+}
+
 #[tokio::test]
 #[ignore]
 async fn basic_query() {
@@ -46,12 +61,13 @@ async fn stored_procedure() {
         "master",
         true,
     );
-    let drop = Command::query(
-        "IF OBJECT_ID('sp_no_params', 'P') IS NOT NULL DROP PROCEDURE sp_no_params;",
-    );
-    execute(config.clone(), drop).await.unwrap();
-    let create = Command::query("CREATE PROCEDURE sp_no_params AS BEGIN SELECT 2 AS value; END");
-    execute(config.clone(), create).await.unwrap();
+    run_ddl(
+        &config,
+        "IF OBJECT_ID('sp_no_params', 'P') IS NOT NULL DROP PROCEDURE sp_no_params",
+    )
+    .await;
+    run_ddl(&config, "CREATE PROCEDURE sp_no_params AS BEGIN SELECT 2 AS value; END")
+        .await;
 
     let cmd = Command::stored_procedure("sp_no_params");
     let ds = execute(config, cmd).await.unwrap();
@@ -69,14 +85,16 @@ async fn stored_procedure_with_params() {
         "master",
         true,
     );
-    let drop = Command::query(
-        "IF OBJECT_ID('sp_with_param', 'P') IS NOT NULL DROP PROCEDURE sp_with_param;",
-    );
-    execute(config.clone(), drop).await.unwrap();
-    let create = Command::query(
+    run_ddl(
+        &config,
+        "IF OBJECT_ID('sp_with_param', 'P') IS NOT NULL DROP PROCEDURE sp_with_param",
+    )
+    .await;
+    run_ddl(
+        &config,
         "CREATE PROCEDURE sp_with_param @val INT AS BEGIN SELECT @val AS value; END",
-    );
-    execute(config.clone(), create).await.unwrap();
+    )
+    .await;
 
     let cmd = Command::stored_procedure("sp_with_param")
         .with_param(Parameter::new("val", DataValue::Int(5)));
