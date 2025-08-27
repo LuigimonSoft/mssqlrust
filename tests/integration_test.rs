@@ -30,7 +30,7 @@ async fn query_with_params() {
         true,
     );
     let cmd =
-        Command::query("SELECT @P0 as value").with_param(Parameter::new("P0", DataValue::Int(7)));
+        Command::query("SELECT @P1 as value").with_param(Parameter::new("P1", DataValue::Int(7)));
     let ds = execute(config, cmd).await.unwrap();
     assert_eq!(ds.tables["table0"][0]["value"], DataValue::Int(7));
 }
@@ -46,12 +46,11 @@ async fn stored_procedure() {
         "master",
         true,
     );
-    let create = Command::query(
-        r#"
-        IF OBJECT_ID('sp_no_params', 'P') IS NOT NULL DROP PROCEDURE sp_no_params;
-        CREATE PROCEDURE sp_no_params AS BEGIN SELECT 2 AS value; END
-    "#,
+    let drop = Command::query(
+        "IF OBJECT_ID('sp_no_params', 'P') IS NOT NULL DROP PROCEDURE sp_no_params;",
     );
+    execute(config.clone(), drop).await.unwrap();
+    let create = Command::query("CREATE PROCEDURE sp_no_params AS BEGIN SELECT 2 AS value; END");
     execute(config.clone(), create).await.unwrap();
 
     let cmd = Command::stored_procedure("sp_no_params");
@@ -70,11 +69,12 @@ async fn stored_procedure_with_params() {
         "master",
         true,
     );
+    let drop = Command::query(
+        "IF OBJECT_ID('sp_with_param', 'P') IS NOT NULL DROP PROCEDURE sp_with_param;",
+    );
+    execute(config.clone(), drop).await.unwrap();
     let create = Command::query(
-        r#"
-        IF OBJECT_ID('sp_with_param', 'P') IS NOT NULL DROP PROCEDURE sp_with_param;
-        CREATE PROCEDURE sp_with_param @val INT AS BEGIN SELECT @val AS value; END
-    "#,
+        "CREATE PROCEDURE sp_with_param @val INT AS BEGIN SELECT @val AS value; END",
     );
     execute(config.clone(), create).await.unwrap();
 

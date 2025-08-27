@@ -50,7 +50,7 @@ impl Command {
                         .enumerate()
                         .map(|(i, p)| {
                             let name = p.name.trim_start_matches('@');
-                            format!("{} = @P{}", name, i)
+                            format!("{} = @P{}", name, i + 1)
                         })
                         .collect::<Vec<_>>()
                         .join(", ");
