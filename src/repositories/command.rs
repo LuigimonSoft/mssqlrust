@@ -13,11 +13,19 @@ pub struct Command {
 
 impl Command {
     pub fn query(text: &str) -> Self {
-        Self { text: text.into(), command_type: CommandType::Text, parameters: Vec::new() }
+        Self {
+            text: text.into(),
+            command_type: CommandType::Text,
+            parameters: Vec::new(),
+        }
     }
 
     pub fn stored_procedure(name: &str) -> Self {
-        Self { text: name.into(), command_type: CommandType::StoredProcedure, parameters: Vec::new() }
+        Self {
+            text: name.into(),
+            command_type: CommandType::StoredProcedure,
+            parameters: Vec::new(),
+        }
     }
 
     pub fn with_param(mut self, param: Parameter) -> Self {
@@ -40,7 +48,10 @@ impl Command {
                         .parameters
                         .iter()
                         .enumerate()
-                        .map(|(i, p)| format!("{} = @P{}", p.name, i))
+                        .map(|(i, p)| {
+                            let name = p.name.trim_start_matches('@');
+                            format!("{} = @P{}", name, i)
+                        })
                         .collect::<Vec<_>>()
                         .join(", ");
                     sql.push(' ');

@@ -30,7 +30,7 @@ async fn query_with_params() {
         true,
     );
     let cmd =
-        Command::query("SELECT @P0 as value").with_param(Parameter::new("p", DataValue::Int(7)));
+        Command::query("SELECT @P0 as value").with_param(Parameter::new("P0", DataValue::Int(7)));
     let ds = execute(config, cmd).await.unwrap();
     assert_eq!(ds.tables["table0"][0]["value"], DataValue::Int(7));
 }
@@ -79,7 +79,7 @@ async fn stored_procedure_with_params() {
     execute(config.clone(), create).await.unwrap();
 
     let cmd = Command::stored_procedure("sp_with_param")
-        .with_param(Parameter::new("@val", DataValue::Int(5)));
+        .with_param(Parameter::new("val", DataValue::Int(5)));
     let ds = execute(config, cmd).await.unwrap();
     assert_eq!(ds.tables["table0"][0]["value"], DataValue::Int(5));
 }
