@@ -20,14 +20,7 @@ async fn run_ddl(config: &MssqlConfig, sql: &str) {
 #[tokio::test]
 #[ignore]
 async fn basic_query() {
-    let config = MssqlConfig::new(
-        "localhost",
-        1433,
-        "sa",
-        "YourStrong!Passw0rd",
-        "master",
-        true,
-    );
+    let config = test_config();
     let cmd = Command::query("SELECT 1 as value");
     let ds = execute(config, cmd).await.unwrap();
     assert_eq!(ds.tables["table0"][0]["value"], DataValue::Int(1));
