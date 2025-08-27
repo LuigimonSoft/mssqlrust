@@ -52,7 +52,7 @@ async fn test_sp_command() {
     let cmd =
         Command::stored_procedure("sp_test").with_param(Parameter::new("id", DataValue::Int(1)));
     repo.execute(cmd).await.unwrap();
-    assert_eq!(*sql_ref.lock().unwrap(), "EXEC sp_test id = @P1");
+    assert_eq!(*sql_ref.lock().unwrap(), "EXEC sp_test @id = @P1");
     assert_eq!(*params_ref.lock().unwrap(), 1);
 }
 
@@ -68,6 +68,6 @@ async fn test_sp_command_with_at_prefix() {
     let cmd =
         Command::stored_procedure("sp_test").with_param(Parameter::new("@id", DataValue::Int(1)));
     repo.execute(cmd).await.unwrap();
-    assert_eq!(*sql_ref.lock().unwrap(), "EXEC sp_test id = @P1");
+    assert_eq!(*sql_ref.lock().unwrap(), "EXEC sp_test @id = @P1");
     assert_eq!(*params_ref.lock().unwrap(), 1);
 }
