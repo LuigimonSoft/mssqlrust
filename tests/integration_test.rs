@@ -17,6 +17,17 @@ async fn run_ddl(config: &MssqlConfig, sql: &str) {
     while stream.next().await.is_some() {}
 }
 
+fn test_config() -> MssqlConfig {
+    MssqlConfig::new(
+        "localhost",
+        1433,
+        "sa",
+        "YourStrong!Passw0rd",
+        "master",
+        true,
+    )
+}
+
 #[tokio::test]
 #[ignore]
 async fn basic_query() {
