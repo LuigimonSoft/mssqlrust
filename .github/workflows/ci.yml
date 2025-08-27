@@ -16,15 +16,11 @@ jobs:
         ports:
           - 1433:1433
         options: >-
-          --health-cmd "bash -c 'echo \"SELECT 1\" | /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd'" \
+          --health-cmd "bash -c 'echo \"SELECT 1\" | /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd'"
           --health-interval 10s --health-timeout 30s --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
       - name: Run tests
         run: |
           cargo test
