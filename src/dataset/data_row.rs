@@ -12,6 +12,6 @@ impl Index<&str> for DataRow {
     type Output = DataValue;
 
     fn index(&self, column: &str) -> &Self::Output {
-        &self.cells.get(column).expect("unknown column").value
+        &self.cells.get(column).expect(&format!("Column '{}' not found", column)).value
     }
 }
