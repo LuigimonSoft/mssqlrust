@@ -49,7 +49,11 @@ impl Command {
                         .iter()
                         .enumerate()
                         .map(|(i, p)| {
-                            let name = p.name.trim_start_matches('@');
+                            let name = if p.name.starts_with("@") {
+                                p.name.clone()
+                            } else {
+                                p.name.trim_start_matches('@').into()
+                            };
                             format!("@{} = @P{}", name, i + 1)
                         })
                         .collect::<Vec<_>>()
