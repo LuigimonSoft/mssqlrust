@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          SA_PASSWORD: "YourStrong!Passw0rd"
+          ACCEPT_EULA: "Y"
+        ports:
+          - 1433:1433
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Wait for MSSQL
+        run: |
+          for i in {1..30}; do
+            nc -z localhost 1433 && echo "MSSQL is up" && break
+            echo "Waiting for MSSQL..."
+            sleep 10
+          done
+      - name: Run tests
+        run: |
+          cargo test
+          cargo test -- --ignored
