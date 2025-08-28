@@ -50,9 +50,9 @@ impl Command {
                         .enumerate()
                         .map(|(i, p)| {
                             let name = if p.name.starts_with("@") {
-                                p.name.clone()
+                                p.name.trim_start_matches('@')
                             } else {
-                                p.name.trim_start_matches('@').into()
+                                p.name.as_str()
                             };
                             format!("@{} = @P{}", name, i + 1)
                         })
