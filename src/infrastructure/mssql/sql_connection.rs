@@ -101,10 +101,16 @@ impl SqlConnection {
                             }
                             tiberius::ColumnData::Numeric(opt) => opt
                                 .map(|n| {
-                                    DataValue::Decimal(rust_decimal::Decimal::from_i128_with_scale(
+                                    match rust_decimal::Decimal::try_from_i128_with_scale(
                                         n.value(),
                                         n.scale() as u32,
-                                    ))
+                                    ) {
+                                        Ok(d) => DataValue::Decimal(d),
+                                        Err(e) => {
+                                            eprintln!("failed to convert numeric: {e}");
+                                            DataValue::Null
+                                        }
+                                    }
                                 })
                                 .unwrap_or(DataValue::Null),
                             tiberius::ColumnData::DateTime(opt) => {
