@@ -13,5 +13,7 @@ tiberius = { version = "0.12.3", default-features = false, features = ["native-t
 tokio-util = { version = "0.7", features = ["compat"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "time"] }
 async-trait = "0.1"
+uuid = "1"
+rust_decimal = "1"
 
 [dev-dependencies]

@@ -61,6 +61,12 @@ impl SqlConnection {
                     let mut data_row = DataRow::default();
                     for (cd, col) in row.into_iter().zip(table.columns.iter()) {
                         let v = match cd {
+                            tiberius::ColumnData::U8(opt) => {
+                                opt.map(DataValue::TinyInt).unwrap_or(DataValue::Null)
+                            }
+                            tiberius::ColumnData::I16(opt) => {
+                                opt.map(DataValue::SmallInt).unwrap_or(DataValue::Null)
+                            }
                             tiberius::ColumnData::I32(opt) => {
                                 opt.map(DataValue::Int).unwrap_or(DataValue::Null)
                             }
@@ -83,6 +89,9 @@ impl SqlConnection {
                                     DataValue::Null
                                 }
                             }
+                            tiberius::ColumnData::Guid(opt) => {
+                                opt.map(DataValue::Guid).unwrap_or(DataValue::Null)
+                            }
                             tiberius::ColumnData::Binary(opt) => {
                                 if let Some(b) = opt.as_ref() {
                                     DataValue::Binary(b.to_vec())
@@ -90,7 +99,76 @@ impl SqlConnection {
                                     DataValue::Null
                                 }
                             }
-                            _ => DataValue::Null,
+                            tiberius::ColumnData::Numeric(opt) => opt
+                                .map(|n| {
+                                    match rust_decimal::Decimal::try_from_i128_with_scale(
+                                        n.value(),
+                                        n.scale() as u32,
+                                    ) {
+                                        Ok(d) => DataValue::Decimal(d),
+                                        Err(e) => {
+                                            eprintln!("failed to convert numeric: {e}");
+                                            DataValue::Null
+                                        }
+                                    }
+                                })
+                                .unwrap_or(DataValue::Null),
+                            tiberius::ColumnData::DateTime(opt) => {
+                                let val: Option<chrono::NaiveDateTime> =
+                                    <chrono::NaiveDateTime as tiberius::FromSqlOwned>::from_sql_owned(
+                                        tiberius::ColumnData::DateTime(opt),
+                                    )
+                                    .unwrap();
+                                val.map(DataValue::DateTime).unwrap_or(DataValue::Null)
+                            }
+                            tiberius::ColumnData::SmallDateTime(opt) => {
+                                let val: Option<chrono::NaiveDateTime> =
+                                    <chrono::NaiveDateTime as tiberius::FromSqlOwned>::from_sql_owned(
+                                        tiberius::ColumnData::SmallDateTime(opt),
+                                    )
+                                    .unwrap();
+                                val.map(DataValue::DateTime).unwrap_or(DataValue::Null)
+                            }
+                            tiberius::ColumnData::DateTime2(opt) => {
+                                let val: Option<chrono::NaiveDateTime> =
+                                    <chrono::NaiveDateTime as tiberius::FromSqlOwned>::from_sql_owned(
+                                        tiberius::ColumnData::DateTime2(opt),
+                                    )
+                                    .unwrap();
+                                val.map(DataValue::DateTime).unwrap_or(DataValue::Null)
+                            }
+                            tiberius::ColumnData::Time(opt) => {
+                                let val: Option<chrono::NaiveTime> =
+                                    <chrono::NaiveTime as tiberius::FromSqlOwned>::from_sql_owned(
+                                        tiberius::ColumnData::Time(opt),
+                                    )
+                                    .unwrap();
+                                val.map(DataValue::Time).unwrap_or(DataValue::Null)
+                            }
+                            tiberius::ColumnData::Date(opt) => {
+                                let val: Option<chrono::NaiveDate> =
+                                    <chrono::NaiveDate as tiberius::FromSqlOwned>::from_sql_owned(
+                                        tiberius::ColumnData::Date(opt),
+                                    )
+                                    .unwrap();
+                                val.map(DataValue::Date).unwrap_or(DataValue::Null)
+                            }
+                            tiberius::ColumnData::DateTimeOffset(opt) => {
+                                let val: Option<chrono::DateTime<chrono::FixedOffset>> =
+                                    <chrono::DateTime<chrono::FixedOffset> as tiberius::FromSqlOwned>::from_sql_owned(
+                                        tiberius::ColumnData::DateTimeOffset(opt),
+                                    )
+                                    .unwrap();
+                                val.map(DataValue::DateTimeOffset)
+                                    .unwrap_or(DataValue::Null)
+                            }
+                            tiberius::ColumnData::Xml(opt) => {
+                                if let Some(x) = opt.as_ref() {
+                                    DataValue::Text(x.as_ref().to_string())
+                                } else {
+                                    DataValue::Null
+                                }
+                            }
                         };
                         data_row
                             .cells
