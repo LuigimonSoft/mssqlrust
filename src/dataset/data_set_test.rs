@@ -20,5 +20,27 @@ fn create_dataset() {
     table.rows.push(row);
     let mut ds = DataSet::new();
     ds.tables.insert(table.name.clone(), table);
-    assert_eq!(ds.tables["table1"][0]["id"], DataValue::Int(1));
+    assert_eq!(ds.tables["table1"][0]["id"], 1);
+}
+
+#[test]
+fn boolean_comparison() {
+    let mut table = DataTable::new("table1");
+    table.columns.push(DataColumn {
+        name: "flag".into(),
+        sql_type: "bit".into(),
+        size: None,
+        nullable: false,
+    });
+    let mut row = DataRow::default();
+    row.cells.insert(
+        "flag".into(),
+        DataCell {
+            value: DataValue::Bool(true),
+        },
+    );
+    table.rows.push(row);
+    let mut ds = DataSet::new();
+    ds.tables.insert(table.name.clone(), table);
+    assert_eq!(ds.tables["table1"][0]["flag"], true);
 }
