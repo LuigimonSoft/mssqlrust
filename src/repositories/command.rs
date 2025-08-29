@@ -40,7 +40,26 @@ impl Command {
             .map(|p| p.value.to_tiberius())
             .collect();
         match self.command_type {
-            CommandType::Text => (self.text.clone(), params),
+            CommandType::Text => {
+                // Allow using named parameters (e.g., @id) in text queries by rewriting
+                // them to positional placeholders (@P1, @P2, ...), which Tiberius expects.
+                let mut sql = self.text.clone();
+                for (i, p) in self.parameters.iter().enumerate() {
+                    let name = p.name.as_str();
+                    let trimmed = if name.starts_with('@') { &name[1..] } else { name };
+                    // If the user already uses ordinal placeholders (P1, P2, ...), skip rewrite.
+                    if trimmed.len() >= 2
+                        && trimmed.as_bytes()[0] == b'P'
+                        && trimmed[1..].bytes().all(|b| b.is_ascii_digit())
+                    {
+                        continue;
+                    }
+                    let needle = format!("@{}", trimmed);
+                    let replacement = format!("@P{}", i + 1);
+                    sql = replace_param_token(&sql, &needle, &replacement);
+                }
+                (sql, params)
+            }
             CommandType::StoredProcedure => {
                 let mut sql = format!("EXEC {}", self.text);
                 if !self.parameters.is_empty() {
@@ -65,4 +84,33 @@ impl Command {
             }
         }
     }
+}
+
+// Replace all occurrences of `needle` in `haystack` that end at an identifier boundary
+// (i.e., the character following the match is not [A-Za-z0-9_]). This prevents replacing
+// `@id` inside `@id2`.
+fn replace_param_token(haystack: &str, needle: &str, replacement: &str) -> String {
+    let bytes = haystack.as_bytes();
+    let nbytes = needle.as_bytes();
+    let mut i = 0;
+    let mut out = String::with_capacity(haystack.len());
+    while i < bytes.len() {
+        if i + nbytes.len() <= bytes.len() && &bytes[i..i + nbytes.len()] == nbytes {
+            // Boundary check: next char must be absent or not [A-Za-z0-9_]
+            let boundary_ok = match bytes.get(i + nbytes.len()) {
+                None => true,
+                Some(&c) => {
+                    !(c.is_ascii_alphanumeric() || c == b'_')
+                }
+            };
+            if boundary_ok {
+                out.push_str(replacement);
+                i += nbytes.len();
+                continue;
+            }
+        }
+        out.push(bytes[i] as char);
+        i += 1;
+    }
+    out
 }
