@@ -6,7 +6,13 @@ pub struct Parameter {
 }
 
 impl Parameter {
-    pub fn new(name: &str, value: DataValue) -> Self {
-        Self { name: name.into(), value }
+    pub fn new<T>(name: &str, value: T) -> Self
+    where
+        T: Into<DataValue>,
+    {
+        Self {
+            name: name.into(),
+            value: value.into(),
+        }
     }
 }
