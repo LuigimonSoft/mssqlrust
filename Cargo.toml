@@ -6,7 +6,7 @@ authors = ["Luis Carlos Carrillo T (Luigimonsoft)"]
 description = "Lightweight Rust library for Microsoft SQL Server using dataset and datatable"
 license = "MIT"
 readme = "README.md"
-keywords = ["sqlserver", "mssql", "database", "async", "tiberius","dataset","datatable"]
+keywords = ["sqlserver", "mssql", "database","dataset","datatable"]
 categories = ["database", "asynchronous"]
 repository = "https://github.com/Luigimonsoft/mssqlrust"
 
