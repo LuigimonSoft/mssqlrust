@@ -1,0 +1,24 @@
+name: Publish to crates.io
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+      - name: Set version from tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cargo set-version "$version"
+      - run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
