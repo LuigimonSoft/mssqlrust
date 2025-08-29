@@ -39,10 +39,11 @@ sequenceDiagram
 ```
 
 ## Usage
+### Basic query
+Run a simple text query and read the first row/column. Results are accessed via `DataSet → DataTable → DataRow`, and you can compare values directly with native Rust types.
 
 ```rust
 use mssqlrust::{execute, Command, Parameter};
-use mssqlrust::dataset::DataValue;
 use mssqlrust::infrastructure::mssql::MssqlConfig;
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
@@ -70,27 +71,64 @@ async fn main() -> anyhow::Result<()> {
     );
     let ds = execute(config.clone(), cmd).await?;
     let row = &ds.tables["table0"][0];
+
     println!("id: {:?}", row["id"]);
     println!("name: {:?}", row["name"]);
     println!("active: {:?}", row["active"]);
     println!("start_date: {:?}", row["start_date"]);
     println!("price: {:?}", row["price"]);
+```
 
-    // Parameterized query
+### Parameterized query
+
+```rust
     let cmd = Command::query("SELECT @id AS id, @flag AS flag, @amount AS amount, @when AS when_date")
-        .with_param(Parameter::new("id", DataValue::Int(7)))
-        .with_param(Parameter::new("flag", DataValue::Bool(false)))
-        .with_param(Parameter::new("amount", DataValue::Decimal(Decimal::new(1999, 2))))
-        .with_param(Parameter::new("when", DataValue::Date(NaiveDate::from_ymd_opt(2024, 6, 1).unwrap())));
+        .with_param(Parameter::new("id", 7))
+        .with_param(Parameter::new("flag", false))
+        .with_param(Parameter::new("amount", Decimal::new(1999, 2)))
+        .with_param(Parameter::new("when", NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()));
+    
     let ds = execute(config.clone(), cmd).await?;
     let row = &ds.tables["table0"][0];
+
     println!("id: {:?}, flag: {:?}, amount: {:?}, when: {:?}", row["id"], row["flag"], row["amount"], row["when_date"]);
 
-    // Stored procedure with parameter
-    let cmd = Command::stored_procedure("sp_get_user")
-        .with_param(Parameter::new("id", DataValue::Int(42)));
+    Ok(())
+}
+```
+
+### Stored Procedure With Parameters
+
+You can execute stored procedures and pass named parameters (with or without the `@` prefix). Parameters accept native Rust types and are converted internally.
+
+```rust
+use mssqlrust::{execute, Command, Parameter};
+use mssqlrust::infrastructure::mssql::MssqlConfig;
+use chrono::NaiveDate;
+use rust_decimal::Decimal;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = MssqlConfig::new(
+        "localhost", 1433, "sa", "YourStrong!Passw0rd", "master", true,
+    );
+
+    // EXEC sp_upsert_order @id = @P1, @status = @P2, @amount = @P3, @when = @P4
+    let cmd = Command::stored_procedure("sp_upsert_order")
+        .with_param(Parameter::new("id", 1001))
+        .with_param(Parameter::new("status", "PAID"))
+        .with_param(Parameter::new("amount", Decimal::new(1299, 2)))
+        .with_param(Parameter::new("@when", NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()));
+
     let ds = execute(config, cmd).await?;
-    println!("name: {:?}", ds.tables["table0"][0]["name"]);
+
+    // If the procedure returns rows, access them normally
+    if let Some(table) = ds.tables.get("table0") {
+        if !table.rows.is_empty() {
+            let row = &table.rows[0];
+            println!("order_id: {} status: {}", row["id"].clone(), row["status"].clone());
+        }
+    }
 
     Ok(())
 }
