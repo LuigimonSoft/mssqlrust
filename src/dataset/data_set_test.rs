@@ -23,8 +23,6 @@ fn create_dataset() {
     ds.tables.insert(table.name.clone(), table);
     assert_eq!(ds.tables["table1"][0]["id"], 1);
 }
-
-
 #[test]
 fn float_comparison() {
     let mut table = DataTable::new("table1");
