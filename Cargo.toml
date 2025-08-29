@@ -2,6 +2,13 @@
 name = "mssqlrust"
 version = "0.1.0"
 edition = "2021"
+authors = ["Luis Carlos Carrillo T (Luigimonsoft)"]
+description = "Lightweight Rust library for Microsoft SQL Server using dataset and datatable"
+license = "MIT"
+readme = "README.md"
+keywords = ["sqlserver", "mssql", "database", "async", "tiberius","dataset","datatable"]
+categories = ["database", "asynchronous"]
+repository = "https://github.com/Luigimonsoft/mssqlrust"
 
 [dependencies]
 anyhow = "1"
