@@ -201,7 +201,6 @@ impl SqlConnection {
     }
 }
 
-#[inline]
 pub(crate) fn rows_affected_total(counts: &[u64]) -> u64 {
     counts.iter().copied().sum()
 }
