@@ -19,6 +19,8 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           cargo set-version "$version"
-      - run: cargo publish --locked
+      - name: Validate package before publishing
+        run: cargo publish --dry-run
+      - run: cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
