@@ -183,4 +183,39 @@ impl SqlConnection {
         }
         Ok(dataset)
     }
+
+    pub async fn execute_non_query(
+        &mut self,
+        sql: &str,
+        params: Vec<Box<dyn tiberius::ToSql + Send + Sync>>,
+    ) -> Result<u64> {
+        let param_refs: Vec<&dyn tiberius::ToSql> = params
+            .iter()
+            .map(|p| p.as_ref() as &dyn tiberius::ToSql)
+            .collect();
+        let result = self.client.execute(sql, &param_refs[..]).await?;
+        // Rows affected can be reported by the driver; sum all statements in the batch.
+        let counts: &[u64] = result.rows_affected();
+        let total: u64 = rows_affected_total(counts);
+        Ok(total)
+    }
+}
+
+#[inline]
+pub(crate) fn rows_affected_total(counts: &[u64]) -> u64 {
+    counts.iter().copied().sum()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rows_affected_total;
+
+    #[test]
+    fn sums_rows_affected_slice() {
+        assert_eq!(rows_affected_total(&[]), 0);
+        assert_eq!(rows_affected_total(&[0]), 0);
+        assert_eq!(rows_affected_total(&[1]), 1);
+        assert_eq!(rows_affected_total(&[1, 2, 3]), 6);
+        assert_eq!(rows_affected_total(&[10, 0, 5]), 15);
+    }
 }
