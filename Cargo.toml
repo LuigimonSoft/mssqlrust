@@ -2,6 +2,12 @@
 name = "mssqlrust"
 version = "0.1.0"
 edition = "2021"
+authors = ["Luis Carlos <almadejaguar@hotmail.com>"]
+description = "Lightweight Rust library for Microsoft SQL Server built on top of Tiberius"
+license = "MIT"
+readme = "README.md"
+keywords = ["sqlserver", "mssql", "database", "async", "tiberius"]
+categories = ["database", "asynchronous"]
 
 [dependencies]
 anyhow = "1"
