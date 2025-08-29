@@ -242,3 +242,29 @@ async fn non_query_rows_affected() {
     )
     .await;
 }
+
+#[tokio::test]
+#[ignore]
+async fn scalar_query_and_sp() {
+    let config = test_config();
+
+    // Simple scalar query
+    let cmd = Command::query("SELECT CAST(42 AS int) AS value");
+    let value = mssqlrust::execute_scalar(config.clone(), cmd).await.unwrap();
+    assert_eq!(value.unwrap(), 42);
+
+    // Prepare a scalar stored procedure
+    run_ddl(
+        &config,
+        "IF OBJECT_ID('dbo.sp_scalar_test', 'P') IS NOT NULL DROP PROCEDURE dbo.sp_scalar_test",
+    ).await;
+    run_ddl(
+        &config,
+        "CREATE PROCEDURE dbo.sp_scalar_test @x INT AS BEGIN SELECT @x + 1 AS result; END",
+    ).await;
+
+    let sp = Command::stored_procedure("dbo.sp_scalar_test")
+        .with_param(Parameter::new("x", 5));
+    let value = mssqlrust::execute_scalar(config, sp).await.unwrap();
+    assert_eq!(value.unwrap(), 6);
+}

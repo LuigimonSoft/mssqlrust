@@ -7,7 +7,7 @@ pub use repositories::{Command, CommandType, Parameter};
 pub use services::{dataset_service::DatasetService, service::Service};
 
 use anyhow::Result;
-use crate::dataset::DataSet;
+use crate::dataset::{DataSet, DataValue};
 use crate::infrastructure::mssql::{MssqlConfig, SqlConnection};
 use crate::repositories::MssqlDatasetRepository;
 
@@ -27,4 +27,12 @@ pub async fn execute_non_query(config: MssqlConfig, command: Command) -> Result<
     let mut connection = SqlConnection::connect(config).await?;
     let (sql, params) = command.build();
     connection.execute_non_query(&sql, params).await
+}
+
+/// Execute a [`Command`] and return the first column of the first row
+/// as a `DataValue`. If the command returns no rows, returns `Ok(None)`.
+pub async fn execute_scalar(config: MssqlConfig, command: Command) -> Result<Option<DataValue>> {
+    let mut connection = SqlConnection::connect(config).await?;
+    let (sql, params) = command.build();
+    connection.execute_scalar(&sql, params).await
 }

@@ -8,40 +8,8 @@ Add the dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mssqlrust = "1.0.0"
+mssqlrust = "1.0.2"
 ```
-
-### Non-Query (rows affected)
-
-Execute commands that don't return result sets (INSERT/UPDATE/DELETE/DDL) and get how many rows were affected.
-
-```rust
-use mssqlrust::{execute_non_query, Command, Parameter};
-use mssqlrust::infrastructure::mssql::MssqlConfig;
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let config = MssqlConfig::new(
-        "localhost", 1433, "sa", "YourStrong!Passw0rd", "master", true,
-    );
-
-    // Text command
-    let cmd = Command::query("UPDATE Users SET Active = 0 WHERE LastLogin < @cutoff")
-        .with_param(Parameter::new("cutoff", "2024-01-01"));
-    let affected = execute_non_query(config.clone(), cmd).await?;
-    println!("Updated rows: {}", affected);
-
-    // Stored procedure
-    let sp = Command::stored_procedure("sp_archive_users")
-        .with_param(Parameter::new("days", 30));
-    let archived = execute_non_query(config, sp).await?;
-    println!("Archived rows: {}", archived);
-
-    Ok(())
-}
-```
-
-Adjust the URL or version depending on the source you use.
 
 ## How it works
 
@@ -69,8 +37,30 @@ sequenceDiagram
 ```
 
 ## Usage
-### Basic query
+### Basic Query
 Run a simple text query and read the first row/column. Results are accessed via `DataSet → DataTable → DataRow`, and you can compare values directly with native Rust types.
+
+```rust
+use mssqlrust::{execute, Command};
+use mssqlrust::infrastructure::mssql::MssqlConfig;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = MssqlConfig::new(
+        "localhost", 1433, "sa", "YourStrong!Passw0rd", "master", true,
+    );
+
+    let cmd = Command::query("SELECT 1 AS value");
+    let ds = execute(config, cmd).await?;
+    let row = &ds.tables["table0"][0];
+    assert_eq!(row["value"], 1);
+    println!("value: {:?}", row["value"]);
+
+    Ok(())
+}
+```
+
+### Parameterized query
 
 ```rust
 use mssqlrust::{execute, Command, Parameter};
@@ -80,48 +70,49 @@ use rust_decimal::Decimal;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Connection configuration
     let config = MssqlConfig::new(
-        "localhost",
-        1433,
-        "sa",
-        "YourStrong!Passw0rd",
-        "master",
-        true,
+        "localhost", 1433, "sa", "YourStrong!Passw0rd", "master", true,
     );
 
-    // Query returning different SQL types
-    let cmd = Command::query(
-        "SELECT \
-         CAST(42 AS INT)            AS id, \
-         N'hello'                   AS name, \
-         CAST(1 AS BIT)             AS active, \
-         CAST('2024-01-01' AS DATE) AS start_date, \
-         CAST(123.45 AS DECIMAL(5,2)) AS price"
-    );
-    let ds = execute(config.clone(), cmd).await?;
-    let row = &ds.tables["table0"][0];
-
-    println!("id: {:?}", row["id"]);
-    println!("name: {:?}", row["name"]);
-    println!("active: {:?}", row["active"]);
-    println!("start_date: {:?}", row["start_date"]);
-    println!("price: {:?}", row["price"]);
-```
-
-### Parameterized query
-
-```rust
     let cmd = Command::query("SELECT @id AS id, @flag AS flag, @amount AS amount, @when AS when_date")
         .with_param(Parameter::new("id", 7))
         .with_param(Parameter::new("flag", false))
         .with_param(Parameter::new("amount", Decimal::new(1999, 2)))
         .with_param(Parameter::new("when", NaiveDate::from_ymd_opt(2024, 6, 1).unwrap()));
-    
-    let ds = execute(config.clone(), cmd).await?;
-    let row = &ds.tables["table0"][0];
 
+    let ds = execute(config, cmd).await?;
+    let row = &ds.tables["table0"][0];
     println!("id: {:?}, flag: {:?}, amount: {:?}, when: {:?}", row["id"], row["flag"], row["amount"], row["when_date"]);
+
+    Ok(())
+}
+```
+
+### Non-Query (rows affected)
+
+Execute commands that don't return result sets (INSERT/UPDATE/DELETE/DDL) and get how many rows were affected.
+
+```rust
+use mssqlrust::{execute_non_query, Command, Parameter};
+use mssqlrust::infrastructure::mssql::MssqlConfig;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = MssqlConfig::new(
+        "localhost", 1433, "sa", "YourStrong!Passw0rd", "master", true,
+    );
+
+    // Text command
+    let cmd = Command::query("UPDATE Users SET Active = 0 WHERE LastLogin < @cutoff")
+        .with_param(Parameter::new("cutoff", "2024-01-01"));
+    let affected = execute_non_query(config.clone(), cmd).await?;
+    println!("Updated rows: {}", affected);
+
+    // Stored procedure
+    let sp = Command::stored_procedure("sp_archive_users")
+        .with_param(Parameter::new("days", 30));
+    let archived = execute_non_query(config, sp).await?;
+    println!("Archived rows: {}", archived);
 
     Ok(())
 }
@@ -159,6 +150,37 @@ async fn main() -> anyhow::Result<()> {
             println!("order_id: {} status: {}", row["id"].clone(), row["status"].clone());
         }
     }
+
+    Ok(())
+}
+```
+
+### Scalar (single value)
+
+Return the first column of the first row from either a text query or a stored procedure.
+
+```rust
+use mssqlrust::{execute_scalar, Command, Parameter};
+use mssqlrust::infrastructure::mssql::MssqlConfig;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = MssqlConfig::new(
+        "localhost", 1433, "sa", "YourStrong!Passw0rd", "master", true,
+    );
+
+    // Query scalar
+    let v = execute_scalar(config.clone(), Command::query("SELECT 42")).await?;
+    assert_eq!(v.unwrap(), 42);
+
+    // Stored procedure scalar
+    // CREATE PROCEDURE dbo.sp_add1 @x INT AS BEGIN SELECT @x + 1; END
+    let v = execute_scalar(
+        config,
+        Command::stored_procedure("dbo.sp_add1").with_param(Parameter::new("x", 5)),
+    )
+    .await?;
+    assert_eq!(v.unwrap(), 6);
 
     Ok(())
 }
