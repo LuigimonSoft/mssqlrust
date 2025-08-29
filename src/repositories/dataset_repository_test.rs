@@ -1,6 +1,6 @@
 use super::query_executor::QueryExecutor;
 use super::*;
-use crate::dataset::{DataSet, DataValue};
+use crate::dataset::{DataSet};
 use crate::repositories::Parameter;
 use anyhow::Result;
 use async_trait::async_trait;

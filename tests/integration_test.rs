@@ -1,4 +1,3 @@
-use mssqlrust::dataset::DataValue;
 use mssqlrust::dataset::DataValue::Null;
 use mssqlrust::infrastructure::mssql::MssqlConfig;
 use mssqlrust::{execute, Command, Parameter};
