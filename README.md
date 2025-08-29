@@ -8,7 +8,7 @@ Add the dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mssqlrust = { git = "https://github.com/your_user/mssqlrust", tag = "0.1.0" }
+mssqlrust = "1.0.0"
 ```
 
 Adjust the URL or version depending on the source you use.
