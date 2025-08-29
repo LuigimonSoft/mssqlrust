@@ -34,7 +34,7 @@ async fn test_query_command() {
     let params_ref = exec.last_params.clone();
     let mut repo = MssqlDatasetRepository::new(exec);
     let cmd = Command::query("SELECT 1 WHERE id = @P1")
-        .with_param(Parameter::new("P1", DataValue::Int(1)));
+        .with_param(Parameter::new("P1", 1));
     repo.execute(cmd).await.unwrap();
     assert_eq!(*sql_ref.lock().unwrap(), "SELECT 1 WHERE id = @P1");
     assert_eq!(*params_ref.lock().unwrap(), 1);
@@ -49,8 +49,7 @@ async fn test_sp_command() {
     let sql_ref = exec.last_sql.clone();
     let params_ref = exec.last_params.clone();
     let mut repo = MssqlDatasetRepository::new(exec);
-    let cmd =
-        Command::stored_procedure("sp_test").with_param(Parameter::new("id", DataValue::Int(1)));
+    let cmd = Command::stored_procedure("sp_test").with_param(Parameter::new("id", 1));
     repo.execute(cmd).await.unwrap();
     assert_eq!(*sql_ref.lock().unwrap(), "EXEC sp_test @id = @P1");
     assert_eq!(*params_ref.lock().unwrap(), 1);
@@ -65,8 +64,7 @@ async fn test_sp_command_with_at_prefix() {
     let sql_ref = exec.last_sql.clone();
     let params_ref = exec.last_params.clone();
     let mut repo = MssqlDatasetRepository::new(exec);
-    let cmd =
-        Command::stored_procedure("sp_test").with_param(Parameter::new("@id", DataValue::Int(1)));
+    let cmd = Command::stored_procedure("sp_test").with_param(Parameter::new("@id", 1));
     repo.execute(cmd).await.unwrap();
     assert_eq!(*sql_ref.lock().unwrap(), "EXEC sp_test @id = @P1");
     assert_eq!(*params_ref.lock().unwrap(), 1);

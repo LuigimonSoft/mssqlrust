@@ -1,4 +1,5 @@
 use mssqlrust::dataset::DataValue;
+use mssqlrust::dataset::DataValue::Null;
 use mssqlrust::infrastructure::mssql::MssqlConfig;
 use mssqlrust::{execute, Command, Parameter};
 
@@ -61,7 +62,7 @@ async fn query_with_params() {
         true,
     );
     let cmd =
-        Command::query("SELECT @P1 as value").with_param(Parameter::new("P1", DataValue::Int(7)));
+        Command::query("SELECT @P1 as value").with_param(Parameter::new("P1", 7));
     let ds = execute(config, cmd).await.unwrap();
     assert_eq!(ds.tables["table0"][0]["value"], 7);
 }
@@ -116,7 +117,7 @@ async fn stored_procedure_with_params() {
     .await;
 
     let cmd = Command::stored_procedure("sp_with_param")
-        .with_param(Parameter::new("val", DataValue::Int(5)));
+        .with_param(Parameter::new("val", 5));
     let ds = execute(config, cmd).await.unwrap();
     assert_eq!(ds.tables["table0"][0]["value"], 5);
 }
@@ -151,43 +152,36 @@ async fn all_types_query() {
     assert_eq!(row["small_col"], 2);
     assert_eq!(row["int_col"], 3);
     assert_eq!(row["big_col"], 4);
-    assert_eq!(row["float_col"], DataValue::Float(5.5));
-    assert_eq!(row["decimal_col"], DataValue::Decimal(Decimal::new(12345, 2)));
+    assert_eq!(row["float_col"], 5.5);
+    assert_eq!(row["decimal_col"], Decimal::new(12345, 2));
     assert_eq!(row["bit_col"], true);
-    assert_eq!(row["text_col"], DataValue::Text("text".into()));
-    assert_eq!(
-        row["binary_col"],
-        DataValue::Binary(vec![1, 2, 3])
-    );
+    assert_eq!(row["text_col"], "text");
+    assert_eq!(row["binary_col"], vec![1, 2, 3]);
     assert_eq!(
         row["guid_col"],
-        DataValue::Guid(Uuid::parse_str("6F9619FF-8B86-D011-B42D-00CF4FC964FF").unwrap())
+        Uuid::parse_str("6F9619FF-8B86-D011-B42D-00CF4FC964FF").unwrap()
     );
     assert_eq!(
         row["date_col"],
-        DataValue::Date(NaiveDate::from_ymd_opt(2023, 1, 1).unwrap())
+        NaiveDate::from_ymd_opt(2023, 1, 1).unwrap()
     );
     assert_eq!(
         row["time_col"],
-        DataValue::Time(NaiveTime::from_hms_opt(12, 34, 56).unwrap())
+        NaiveTime::from_hms_opt(12, 34, 56).unwrap()
     );
     assert_eq!(
         row["datetime_col"],
-        DataValue::DateTime(
-            NaiveDate::from_ymd_opt(2023, 1, 1)
-                .unwrap()
-                .and_hms_opt(1, 2, 3)
-                .unwrap(),
-        )
+        NaiveDate::from_ymd_opt(2023, 1, 1)
+            .unwrap()
+            .and_hms_opt(1, 2, 3)
+            .unwrap()
     );
     assert_eq!(
         row["dto_col"],
-        DataValue::DateTimeOffset(
-            DateTime::parse_from_rfc3339("2023-01-01T01:02:03+02:00")
-                .unwrap(),
-        )
+        DateTime::parse_from_rfc3339("2023-01-01T01:02:03+02:00")
+            .unwrap()
     );
-    assert!(matches!(row["null_col"], DataValue::Null));
+    assert!(matches!(row["null_col"], Null));
 
     let cols = &ds.tables["table0"].columns;
     assert_eq!(cols[0].sql_type, "Int1");
