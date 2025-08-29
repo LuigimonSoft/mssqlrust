@@ -19,3 +19,12 @@ pub async fn execute(config: MssqlConfig, command: Command) -> Result<DataSet> {
     let mut service = DatasetService::new(repo);
     service.fetch(command).await
 }
+
+/// Execute a non-query [`Command`] (e.g., INSERT/UPDATE/DELETE/DDL) and return the
+/// total number of affected rows. If the SQL contains multiple statements, the
+/// returned count is the sum of row counts reported by the server.
+pub async fn execute_non_query(config: MssqlConfig, command: Command) -> Result<u64> {
+    let mut connection = SqlConnection::connect(config).await?;
+    let (sql, params) = command.build();
+    connection.execute_non_query(&sql, params).await
+}

@@ -11,6 +11,36 @@ Add the dependency to your `Cargo.toml`:
 mssqlrust = "1.0.0"
 ```
 
+### Non-Query (rows affected)
+
+Execute commands that don't return result sets (INSERT/UPDATE/DELETE/DDL) and get how many rows were affected.
+
+```rust
+use mssqlrust::{execute_non_query, Command, Parameter};
+use mssqlrust::infrastructure::mssql::MssqlConfig;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let config = MssqlConfig::new(
+        "localhost", 1433, "sa", "YourStrong!Passw0rd", "master", true,
+    );
+
+    // Text command
+    let cmd = Command::query("UPDATE Users SET Active = 0 WHERE LastLogin < @cutoff")
+        .with_param(Parameter::new("cutoff", "2024-01-01"));
+    let affected = execute_non_query(config.clone(), cmd).await?;
+    println!("Updated rows: {}", affected);
+
+    // Stored procedure
+    let sp = Command::stored_procedure("sp_archive_users")
+        .with_param(Parameter::new("days", 30));
+    let archived = execute_non_query(config, sp).await?;
+    println!("Archived rows: {}", archived);
+
+    Ok(())
+}
+```
+
 Adjust the URL or version depending on the source you use.
 
 ## How it works

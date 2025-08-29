@@ -199,3 +199,46 @@ async fn all_types_query() {
     assert_eq!(cols[13].sql_type, "DatetimeOffsetn");
     assert_eq!(cols[14].sql_type, "Int4");
 }
+
+#[tokio::test]
+#[ignore]
+async fn non_query_rows_affected() {
+    let config = test_config();
+    // Prepare a table for testing
+    run_ddl(
+        &config,
+        "IF OBJECT_ID('dbo.mssqlrust_non_query_test', 'U') IS NOT NULL DROP TABLE dbo.mssqlrust_non_query_test",
+    )
+    .await;
+    run_ddl(
+        &config,
+        "CREATE TABLE dbo.mssqlrust_non_query_test (id INT PRIMARY KEY, val INT NOT NULL)",
+    )
+    .await;
+
+    // Insert two rows in a single statement -> affected = 2
+    let insert_cmd = Command::query(
+        "INSERT INTO dbo.mssqlrust_non_query_test (id, val) VALUES (1, 10), (2, 20)",
+    );
+    let affected = mssqlrust::execute_non_query(config.clone(), insert_cmd)
+        .await
+        .unwrap();
+    assert_eq!(affected, 2);
+
+    // Update one row using parameters -> affected = 1
+    let update_cmd = Command::query(
+        "UPDATE dbo.mssqlrust_non_query_test SET val = val + 1 WHERE id = @id",
+    )
+    .with_param(Parameter::new("id", 1));
+    let affected = mssqlrust::execute_non_query(config.clone(), update_cmd)
+        .await
+        .unwrap();
+    assert_eq!(affected, 1);
+
+    // Cleanup
+    run_ddl(
+        &config,
+        "DROP TABLE dbo.mssqlrust_non_query_test",
+    )
+    .await;
+}
